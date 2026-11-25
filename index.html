@@ -106,7 +106,7 @@ const prepSuggestion=i=>{
  return 'PREP: '+quantity+' '+(quantity===1?recipe[1].replace(/s$/,''):recipe[1])+( [5,2.5,3.5,11,4.5,7/12,2/3].includes(recipe[0])?' (estimated yield)':'');}
  return 'PREP: Quantity TBD · '+(trigger?'Restock triggered':'Need '+fmt(gap)+' '+i.unit);
 };
-const countOptions=value=>{let vals=[''];for(let x=0;x<=20.00001;x+=.25)vals.push(fmt(x));if(value!==''&&!vals.includes(String(value)))vals.push(String(value));return vals.map(v=>`<option value="${esc(v)}" ${String(value)===v?'selected':''}>${v===''?'Not counted':v}</option>`).join('')};
+const countOptions=value=>{let vals=['','0','0.25','0.5','0.75'];for(let x=1;x<=20;x++)vals.push(String(x));if(value!==''&&!vals.includes(String(value)))vals.push(String(value));return vals.map(v=>`<option value="${esc(v)}" ${String(value)===v?'selected':''}>${v===''?'Not counted':v}</option>`).join('')};
 
 const makeSeed=()=>({date:today(),items:raw.map((r,idx)=>({id:'i'+idx,name:r[0],par:pars[r[0]]??r[1],category:r[2],station:r[3],unit:r[4],note:r[5]||'',mode:r[0]==='Dilla CHZ'?'manual':(r[0] in thresholds?'threshold':'par'),threshold:thresholds[r[0]]??0,location:idx<15?locations[0]:idx<25?locations[1]:locations[2],instruction:instructions[r[0]]||'',have:'0',done:false,daily:['Roma Toms','Basil','House Mix','Romaine'].includes(r[0])})),seasonal:seasonalSeed.map((r,idx)=>({id:'s'+idx,pizza:r[0],name:r[1],station:r[2],active:false,done:false}))});
 const dailyPar=(i)=>{if(!['House Mix','Romaine'].includes(i.name))return i.par;const day=new Date(state.date+'T12:00:00').getDay();return day===2?0:([5,6].includes(day)?21:14)};
