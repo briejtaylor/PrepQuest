@@ -1,0 +1,178 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Prep Quests v1.1</title><style>:root{font-family:system-ui,sans-serif;color:#16313b;background:#f4f8f7}body{margin:0}header{background:#123c45;color:white;padding:18px 16px}h1{margin:0;font-size:26px}small{opacity:.85}main{max-width:700px;margin:auto;padding:12px}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:12px;background:#d7e9e9;color:#123c45;font-weight:700}button.active{background:#135d66;color:white}.tabs{display:flex;gap:7px;margin:12px 0}.tabs button{flex:1;padding:10px 5px;font-size:12px}.menu-pick{width:100%;padding:12px;border:1px solid #b6cacc;border-radius:10px;background:white;font-size:16px}.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.menu-day{margin:12px 0}.menu-day h3{margin:0 0 10px}.menu-grid label{font-size:12px;font-weight:700;display:block;margin-bottom:5px}.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.group{margin:18px 0}.item{background:white;border:1px solid #d5e0df;border-radius:14px;padding:13px;margin:9px 0;box-shadow:0 1px 3px #0001}.name{font-size:17px;font-weight:750}.meta{font-size:12px;color:#536c73;margin:3px 0 10px}.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.field label{display:block;font-size:12px;font-weight:700;color:#52696f;margin-bottom:4px}.field input,.field select{box-sizing:border-box;width:100%;padding:10px 6px;border:1px solid #b6cacc;border-radius:9px;font-size:19px;text-align:center;background:white;min-height:45px}.need{background:#edf5f4;border-radius:10px;padding:9px;text-align:center;font-size:22px;font-weight:800}.need span{display:block;font-size:11px;font-weight:600}.task{display:flex;align-items:center;gap:12px}.task input{width:24px;height:24px}.task .details{flex:1}.done{text-decoration:line-through;opacity:.55}.edit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.edit input,.edit select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #b6cacc;border-radius:8px}.edit label{font-size:12px}.hint{color:#536c73;font-size:13px;line-height:1.45}.warning{color:#995321}.footer{margin:28px 0;font-size:12px;color:#536c73}.hide{display:none}details.group>summary{font-size:21px;font-weight:750;cursor:pointer;padding:10px 2px} .pill{display:inline-block;border-radius:20px;background:#e1f0ea;padding:5px 9px;font-size:12px} .seasonal{border-left:4px solid #a978c5}.muted{color:#536c73;font-size:12px}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.actions button{padding:8px;font-size:13px} .field select:focus,.field input:focus{outline:2px solid #4c9297}.special-check{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #e1e8e7}.special-check input{width:22px;height:22px}.prep-amount{display:inline-block;font-size:17px;color:#125b64;margin-bottom:5px}</style></head><body><header><h1>⚓ Prep Quests <span style="font-size:12px;opacity:.7">v1.1</span></h1><small>Count it. Prep it. Done.</small></header><main><div class="bar"><strong id="day"></strong><button id="reset">Start new day</button></div><div class="bar" style="margin-top:12px"><button id="exportBtn">⬇ Export backup</button><button id="importBtn">⬆ Import backup</button><input id="importFile" type="file" accept=".json,application/json" class="hide"></div><div class="tabs"><button id="countTab" class="active">Count</button><button id="prepTab">Prep list</button><button id="menuTab">Weekly menu</button><button id="settingsTab">Edit items</button></div><p class="hint" id="intro"></p><div id="content"></div><div class="footer">Saved on this device/browser using local storage. For reliable long-term use, export a backup regularly. Opening in a different browser or clearing site data may lose saved counts.</div></main><script>
+const locations=['Toppings Table','Walk-in Rolling Cart','Walk-in Shelves'];
+const stations=['Slicer','Shredder','Sauces','Chopping & Mincing','Portioning / Packaging'];
+const cats=['Meats','Cheese','Produce','Sauces','Other'];
+const raw=[
+// Toppings table, exact physical count order
+['Roma Toms',3,'Produce','Chopping & Mincing','6th Pan'],['Mushrooms',4,'Produce','Chopping & Mincing','6th Pan'],['Red Onions',1,'Produce','Chopping & Mincing','Red Lid Container'],['Pickles',1,'Produce','Chopping & Mincing','6th Pan'],['Basil',2,'Produce','Chopping & Mincing','6th Pan'],['Parsley',1,'Produce','Chopping & Mincing','9th Pan'],['Jalapeños',0,'Produce','Chopping & Mincing','9th Pan'],['Waffles',1,'Produce','Chopping & Mincing','Red Lid Container'],['Potatoes',1,'Produce','Shredder','Red Lid Container'],['Pepper Jack',1,'Cheese','Slicer','6th Pan'],['Dilla CHZ',0,'Cheese','Shredder','Red Lid Container'],['Black Olives',0,'Produce','Portioning / Packaging','Green Lid Container'],['Pineapple',0,'Produce','Portioning / Packaging','Green Lid Container'],['Hot Honey',0,'Sauces','Sauces','Original Honey Bottle','Kitchen shelves nearby'],['Cookie Crumble Mix',0,'Other','Sauces','Green Lid Container','Kitchen shelves nearby','threshold',0.25],
+// Rolling cart
+['Chicken',8,'Meats','Shredder','6th Pan'],['Sausage',8,'Meats','Shredder','6th Pan'],['Bacon',8,'Meats','Portioning / Packaging','6th Pan'],['Kielbasa',2,'Meats','Chopping & Mincing','6th Pan'],['Soppressata',3,'Meats','Slicer','6th Pan'],['Prosciutto',2,'Meats','Slicer','6th Pan'],['Ham',3,'Meats','Slicer','6th Pan'],['Provolone',6,'Cheese','Slicer','9th Pan'],['Smk Gouda',6,'Cheese','Slicer','9th Pan'],['Bruschetta',1,'Sauces','Sauces','Red Lid Container'],
+// Walk-in shelves
+['Aged Mozz',15,'Cheese','Slicer','3rd Pan'],['House Red',4,'Sauces','Sauces','Short Blue Lid Container'],['Jala Puree',1,'Sauces','Sauces','Green Lid Container'],['Garlic Puree',1,'Sauces','Sauces','Squeeze Bottle'],['Basil Pesto',1,'Sauces','Sauces','Squeeze Bottle'],['Pepperoncini',2,'Produce','Chopping & Mincing','9th Pan'],['Garlic Mince',2,'Produce','Chopping & Mincing','9th Pan'],['House BBQ',0,'Sauces','Sauces','Large Original BBQ Container'],['Ranch',2,'Sauces','Sauces','Short Blue Lid Container'],['Bacon Apple Pie Filling',1,'Other','Chopping & Mincing','Short Blue Lid Container','As needed','threshold',0.25],['Wings',0,'Meats','Portioning / Packaging','Hotel Pan'],['Nuggets',0,'Meats','Portioning / Packaging','Hotel Pan'],['House Mix',14,'Produce','Portioning / Packaging','Bowl'],['Romaine',14,'Produce','Portioning / Packaging','Bowl']
+];
+const instructions={'Sausage':'Bag or case','Soppressata':'Log','Bacon':'Portion into pans; wrap and refrigerate','Kielbasa':'Bag','Chicken':'Bag or case','Prosciutto':'Hock','Ham':'Hock','Aged Mozz':'Case','Provolone':'Log','Smk Gouda':'Log','Pepper Jack':'Log','Garlic Mince':'Pan','Mushrooms':'Pan','Potatoes':'10 lbs','Roma Toms':'Pan','Basil':'Pan','Parsley':'Pan','Pepperoncini':'Pan','Waffles':'Container','Celery':'Pan','Pickles':'Pan','House Red':'Container','Garlic Puree':'Bottle','Basil Pesto':'Bottle','Ranch':'Container','Jala Puree':'Container','Bruschetta':'Container','Wings':'Portion into snack baggies; wrap and place in hotel pan','Nuggets':'Portion into snack baggies; wrap and place in hotel pan','House Mix':'Portion into side salad bowls; 7 per tray','Romaine':'Portion into side salad bowls; 7 per tray','Black Olives':'Portion into green-lid container','Pineapple':'Portion into green-lid container'};
+const seasonalSeed=[['Celery (optional)','Prep Celery','Chopping & Mincing'],['Gourded','Butternut Squash Sauce','Sauces'],['Gourded','Chop Zucchini','Chopping & Mincing'],['Gourded','Chop Yellow Squash','Chopping & Mincing'],['The Feast','Gravy','Sauces'],['The Feast','Stuffing','Sauces'],['The Tuscan','Broccolini','Chopping & Mincing'],['Mushroom Pizza','Mushroom Duxelles','Sauces'],['Philly','Philly Mix','Chopping & Mincing'],['Meatball','Quarter Meatballs','Chopping & Mincing']];
+const key='prepquests_v11';
+const menuDays=['Wednesday','Thursday','Friday','Saturday','Sunday','Monday'];
+const defaultPizzas=['Alfredo','Bacon & Bleu','BBQ Chicken','Bianca','BLT','C.B.R.','Caprese','Carnivore','Cheeseburger','Chix & Waff','Dodie’s','Hawaiian','Kickin’','Loaded & Baked','Meatball','Parlay','Pompeii','Presto','Queso Cinco','Sooner’s Revenge','Soprano','Supremo','West Coast','Windy City','Gourded','The Feast','The Tuscan','Philly','Bloomin’ Shroom'];
+const emptyMenu=()=>Object.fromEntries(menuDays.map(day=>[day,['','']]));const today=()=>new Date().toLocaleDateString('en-CA');
+const thresholds={'Red Onions':0.25,'Pickles':0.25,'Basil':0.5,'Parsley':0.25,'Jalapeños':0.25,'Waffles':0.25,'Potatoes':0.25,'Pepper Jack':0.25,'Black Olives':0.25,'Pineapple':0.25,'Hot Honey':0.5,'Cookie Crumble Mix':0.25,'Bruschetta':0.25,'Jala Puree':0.25,'House BBQ':0.5,'Bacon Apple Pie Filling':0.25,'Wings':0.25,'Nuggets':0.25};
+const pars={'Roma Toms':2,'Mushrooms':4,'Chicken':8,'Sausage':8,'Bacon':8,'Kielbasa':2,'Soppressata':3,'Prosciutto':2,'Ham':3,'Provolone':6,'Smk Gouda':6,'Aged Mozz':15,'House Red':4,'Garlic Puree':1,'Pepperoncini':2,'Garlic Mince':2,'Ranch':2,'House Mix':14,'Romaine':14};
+// Prep details are independent of the inventory count unit.
+const prepSpecs={
+'Aged Mozz':['Case','1 case → approximately 4–6 third pans; slicer 4.5'],
+'Smk Gouda':['Log','1 log → approximately 6 ninth pans; slicer 2'],
+'Provolone':['Log','1 log → approximately 10–12 ninth pans; slicer 2'],
+'Pepper Jack':['Log','1 log → approximately 2–3 sixth pans; slicer 2'],
+'Soppressata':['Log','1 log → approximately 2–3 sixth pans; slicer 1.5'],
+'Prosciutto':['Hock','1 hock → 2 sixth pans; slicer 1.5'],
+'Ham':['Hock','1 hock → 3 sixth pans; slicer 2'],
+'Chicken':['Bag or case','1 case = 2 bags; 1 bag → 3–4 sixth pans'],
+'Sausage':['Bag or case','1 case = 2 bags; 1 bag → 3–4 sixth pans'],
+'Potatoes':['10 lb batch','10 lb → 1 red-lid container'],
+'Dilla CHZ':['Cheese ends','Shred accumulated mozzarella, Gouda and provolone ends when enough collect; no fixed conversion'],
+'House Red':['Batch','1 batch → 1 short blue-lid container'],
+'Garlic Puree':['Garlic-clove container','1 container of cloves → approximately 2–3 squeeze bottles'],
+'Jala Puree':['Batch','Approximately 5 lb jalapeños → ⅔ green-lid container'],
+'Basil Pesto':['Case','1 case = 3 tubs → approximately 4–5 squeeze bottles'],
+'House BBQ':['Original BBQ bottle','1 bottle mixed with Sriracha → approximately 1 original BBQ container'],
+'Ranch':['Batch','1 batch → 1 short blue-lid container'],
+'Hot Honey':['Original honey bottle','1 bottle mixed with Sriracha → approximately 1 original honey bottle'],
+'Bruschetta':['Batch','1 batch → approximately ½–⅔ red-lid container'],
+'Cookie Crumble Mix':['Batch','1 batch → approximately ½–⅔ green-lid container (¼ trigger refers to usual working amount)'],
+'Mushrooms':['Sixth pan','Chop and fill sixth pans; no fixed batch conversion'],
+'Red Onions':['Rough batch','Fill red-lid container slightly overflowing with whole onions, then chop that amount; approximate'],
+'Roma Toms':['Sixth pan','Chop and fill sixth pans; prepare fresh daily'],
+'Jalapeños':['Ninth pan','Chop and fill ninth pan; West Coast pizza may require more (TBD)'],
+'Parsley':['Ninth pan','Chop and fill ninth pan'],
+'Basil':['Sixth pan','Pluck leaves and fill sixth pan; prepare fresh daily'],
+'Waffles':['Red-lid container','Chop and fill red-lid container'],
+'Kielbasa':['Bag','1 bag → 2 sixth pans; chop and fill'],
+'Garlic Mince':['Ninth pan','Eyeball, mince and fill; no fixed batch'],
+'Pepperoncini':['Ninth pan','Eyeball, chop and fill; no fixed batch'],
+'Pickles':['Jar','1 jar → 1 sixth pan'],
+'Bacon Apple Pie Filling':['Batch','1 batch → approximately ⅔ short blue-lid container'],
+'Bacon':['Bag or case','1 case = 2 bags; 1 bag → 3–4 sixth pans; portion, wrap and refrigerate'],
+'Black Olives':['Can','Open can, drain most liquid, transfer to green-lid container, label date opened; yield unspecified'],
+'Pineapple':['Can','Open can, drain most liquid, transfer to green-lid container, label date opened; yield unspecified'],
+'Wings':['Case','1 case = 2 bags; portion 1 lb per snack bag; store in hotel pan; case weight/yield unknown'],
+'Nuggets':['Case','1 case = 2 bags; portion ½ lb per snack bag; store in hotel pan; case weight/yield unknown'],
+'House Mix':['Bowls to PAR','Daily: portion salad bowls to PAR; 7 bowls per tray'],
+'Romaine':['Bowls to PAR','Daily: portion salad bowls to PAR; 7 bowls per tray']
+};
+const seasonalSpecs={
+'Prep Celery':'Chop and fill ninth pan; optional',
+'Butternut Squash Sauce':'1 batch → 1 squeeze bottle plus a little extra',
+'Chop Zucchini':'Chop and fill sixth pan',
+'Chop Yellow Squash':'Chop and fill sixth pan',
+'Gravy':'4 packets → 2 squeeze bottles',
+'Stuffing':'2 boxes → approximately ⅔ green-lid container',
+'Broccolini':'1 case → approximately ⅔–1 green-lid container; chop and cook',
+'Mushroom Duxelles':'Batch size and yield not yet known',
+'Philly Mix':'Approximately 5 lb onions + 5 lb bell peppers → ½–⅔ third pan; chop and cook down',
+'Quarter Meatballs':'Quarter meatballs and fill ninth pan'
+};
+const stationOrder={
+'Slicer':['Aged Mozz','Smk Gouda','Provolone','Pepper Jack','Soppressata','Prosciutto','Ham'],
+'Shredder':['Chicken','Sausage','Potatoes','Dilla CHZ'],
+'Sauces':['House Red','Garlic Puree','Jala Puree','Basil Pesto','House BBQ','Ranch','Hot Honey','Bruschetta','Cookie Crumble Mix'],
+'Chopping & Mincing':['Mushrooms','Red Onions','Roma Toms','Jalapeños','Parsley','Basil','Waffles','Kielbasa','Garlic Mince','Pepperoncini','Pickles','Bacon Apple Pie Filling'],
+'Portioning / Packaging':['Bacon','Black Olives','Pineapple','Wings','Nuggets','House Mix','Romaine']
+};
+const ordered=(items,station)=>items.slice().sort((a,b)=>{const order=stationOrder[station]||[];const ia=order.indexOf(a.name),ib=order.indexOf(b.name);return (ia<0?999:ia)-(ib<0?999:ib)});
+const prepHint=i=>{const spec=prepSpecs[i.name];return spec?spec[0]+' · '+spec[1]:(i.instruction||'No prep conversion recorded')};
+const fmt=n=>Number.isInteger(n)?String(n):String(Math.round(n*100)/100);
+// Planning yields: use a typical estimate for variable outputs, never imply precision.
+const recipes={
+'Aged Mozz':[5,'cases'],'Smk Gouda':[6,'logs'],'Provolone':[11,'logs'],'Pepper Jack':[2.5,'logs'],
+'Soppressata':[2.5,'logs'],'Prosciutto':[2,'hocks'],'Ham':[3,'hocks'],
+'Chicken':[3.5,'bags'],'Sausage':[3.5,'bags'],'Bacon':[3.5,'bags'],
+'Potatoes':[1,'10 lb batches'],'House Red':[1,'batches'],'Garlic Puree':[2.5,'garlic-clove containers'],
+'Jala Puree':[2/3,'5 lb batches'],'Basil Pesto':[4.5,'cases'],'House BBQ':[1,'original bottles'],
+'Ranch':[1,'batches'],'Hot Honey':[1,'original bottles'],'Bruschetta':[7/12,'batches'],
+'Cookie Crumble Mix':[7/12,'batches'],'Kielbasa':[2,'bags'],'Pickles':[1,'jars'],
+'Bacon Apple Pie Filling':[2/3,'batches']};
+const fillItems=new Set(['Mushrooms','Red Onions','Roma Toms','Jalapeños','Parsley','Basil','Waffles','Garlic Mince','Pepperoncini','Black Olives','Pineapple','House Mix','Romaine']);
+const prepSuggestion=i=>{
+ if(i.mode==='manual')return 'Prep when cheese ends are ready';
+ if(i.have==='')return 'Count needed first';
+ const gap=shortage(i), trigger=i.mode==='threshold';
+ if(trigger&&!needs(i))return 'No prep needed';
+ if(!trigger&&gap<=0)return 'At PAR';
+ if(fillItems.has(i.name))return 'PREP: Fill '+fmt(trigger?Math.max(1,Number(i.par||1)-Number(i.have)):gap)+' '+i.unit+(gap===1?'':'s');
+ const recipe=recipes[i.name];
+ if(recipe){const quantity=trigger?Math.max(1,Math.ceil((Math.max(0,Number(i.par||1)-Number(i.have))||recipe[0])/recipe[0])):Math.ceil(gap/recipe[0]);
+ if(['Chicken','Sausage','Bacon'].includes(i.name)){const cases=Math.floor(quantity/2),bags=quantity%2;return 'PREP: '+[cases?cases+' case'+(cases===1?'':'s'):'',bags?bags+' bag'+(bags===1?'':'s'):''].filter(Boolean).join(' + ')+' (estimated yield)';}
+ return 'PREP: '+quantity+' '+(quantity===1?recipe[1].replace(/s$/,''):recipe[1])+( [5,2.5,3.5,11,4.5,7/12,2/3].includes(recipe[0])?' (estimated yield)':'');}
+ return 'PREP: Quantity TBD · '+(trigger?'Restock triggered':'Need '+fmt(gap)+' '+i.unit);
+};
+const countOptions=value=>{let vals=[''];for(let x=0;x<=20.00001;x+=.25)vals.push(fmt(x));if(value!==''&&!vals.includes(String(value)))vals.push(String(value));return vals.map(v=>`<option value="${esc(v)}" ${String(value)===v?'selected':''}>${v===''?'Not counted':v}</option>`).join('')};
+
+const makeSeed=()=>({date:today(),items:raw.map((r,idx)=>({id:'i'+idx,name:r[0],par:pars[r[0]]??r[1],category:r[2],station:r[3],unit:r[4],note:r[5]||'',mode:r[0]==='Dilla CHZ'?'manual':(r[0] in thresholds?'threshold':'par'),threshold:thresholds[r[0]]??0,location:idx<15?locations[0]:idx<25?locations[1]:locations[2],instruction:instructions[r[0]]||'',have:'0',done:false,daily:['Roma Toms','Basil','House Mix','Romaine'].includes(r[0])})),seasonal:seasonalSeed.map((r,idx)=>({id:'s'+idx,pizza:r[0],name:r[1],station:r[2],active:false,done:false}))});
+const dailyPar=(i)=>{if(!['House Mix','Romaine'].includes(i.name))return i.par;const day=new Date(state.date+'T12:00:00').getDay();return day===2?0:([5,6].includes(day)?21:14)};
+const closedToday=()=>new Date(state.date+'T12:00:00').getDay()===2;
+
+let state;try{state=JSON.parse(localStorage.getItem(key))}catch(e){}if(!state||!Array.isArray(state.items)||!Array.isArray(state.seasonal)){
+ let old;try{old=JSON.parse(localStorage.getItem('prepquests_v10'))||JSON.parse(localStorage.getItem('prepquests_v8'))||JSON.parse(localStorage.getItem('prepquests_v7'))}catch(e){}
+ state=makeSeed();
+ if(old&&Array.isArray(old.items)){
+  for(const i of state.items){const prev=old.items.find(x=>x.name===i.name);if(prev){Object.assign(i,prev);}}
+  state.date=old.date||today();state.manualDilla=!!old.manualDilla;
+  if(old.weeklyMenu)state.weeklyMenu=old.weeklyMenu;
+  if(Array.isArray(old.seasonal))for(const i of state.seasonal){const prev=old.seasonal.find(x=>x.pizza===i.pizza&&x.name===i.name);if(prev){i.active=!!prev.active;i.done=!!prev.done;}}
+ }
+}
+if(!state.weeklyMenu)state.weeklyMenu=emptyMenu();
+// Refresh the eligible master list while retaining any additional user-added pizza names.
+const excluded=new Set(['pepperoni','margherita','margarita','cheese','sausage','kids pepp']);
+const priorNames=Array.isArray(state.pizzaNames)?state.pizzaNames:[];
+state.pizzaNames=[...defaultPizzas,...priorNames.filter(n=>typeof n==='string'&&!excluded.has(n.trim().toLowerCase())&&!defaultPizzas.some(p=>p.toLowerCase()===n.trim().toLowerCase()))];
+for(const day of menuDays){if(!Array.isArray(state.weeklyMenu[day]))state.weeklyMenu[day]=['',''];state.weeklyMenu[day]=state.weeklyMenu[day].map(n=>excluded.has(String(n).trim().toLowerCase())?'':n);}
+if(state.date!==today()){state.date=today();state.items.forEach(i=>{i.have='0';i.done=false});state.seasonal.forEach(i=>{i.active=false;i.done=false});state.manualDilla=false;}
+let view='count';const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const save=()=>{try{localStorage.setItem(key,JSON.stringify(state))}catch(e){alert('Local storage unavailable. Export a backup to preserve your work.')}};
+const shortage=i=>i.have===''?null:Math.max(0,Number(dailyPar(i))-Number(i.have));
+const needs=i=>i.mode==='manual'?false:(i.daily&&closedToday()?false:(i.have!==''&&(i.mode==='threshold'?Number(i.have)<=Number(i.threshold):shortage(i)>0)));
+const needText=i=>i.mode==='manual'?'MANUAL':i.have===''?'—':i.mode==='threshold'?(needs(i)?'PREP':'OK'):String(shortage(i));
+function draw(){document.getElementById('day').textContent='Working day: '+state.date;for(const v of ['count','prep','menu','settings'])document.getElementById(v+'Tab').classList.toggle('active',view===v);
+ document.getElementById('intro').textContent=view==='count'?'Count in walking order. Choose quantities without opening the keyboard. Blank = not counted; 0 = none left. Special prep checks are at the bottom.':view==='prep'?'Only flagged tasks appear here, in station order. Prep amounts use known yields; estimated conversions are labeled.':view==='menu'?'Choose two pizzas for each service day. Your selections save automatically. This tab does not yet change prep quantities.':'Edit count units, stations, thresholds, and ingredient settings. Prep conversions are documented in the Prep list. Changes save on this device.';
+ let html='';
+ if(view==='count'){
+  for(const loc of locations){html+=`<details class="group" open><summary>${esc(loc)}</summary>`;
+   for(const i of state.items.filter(x=>x.location===loc)){html+=`<div class="item"><div class="name">${esc(i.name)} ${i.mode==='threshold'?'<span class="pill">Threshold</span>':i.mode==='manual'?'<span class="pill">Manual prep</span>':''}${i.daily?'<span class="pill">Daily</span>':''}</div><div class="meta">${esc(i.unit||'Count unit not set')}${i.note?' · '+esc(i.note):''}</div><div class="controls"><div class="field"><label>Have</label><select aria-label="Have ${esc(i.name)}" data-id="${i.id}" data-field="have">${countOptions(i.have)}</select></div><div class="field"><label>${i.mode==='threshold'?'Trigger at / below':i.mode==='manual'?'Manual':'Par'}</label><input aria-label="${i.mode==='threshold'?'Trigger at / below':i.mode==='manual'?'Manual':'Par'} ${esc(i.name)}" type="number" min="0" step="any" inputmode="decimal" data-id="${i.id}" data-field="${i.mode==='threshold'?'threshold':'par'}" value="${i.mode==='threshold'?i.threshold:dailyPar(i)}" ${i.mode==='manual'||(['House Mix','Romaine'].includes(i.name))?'disabled':''}></div><div class="need"><span>${i.mode==='threshold'||i.mode==='manual'?'STATUS':'NEED'}</span>${needText(i)}</div></div></div>`}
+   html+='</details>'}
+  html+='<section class="item"><h2>Special Prep Checks</h2><p class="hint">Check individual ingredients only when they need prep. Featured pizza names will return with weekly menu integration.</p>';
+  html+=`<label class="special-check"><input type="checkbox" id="manualDilla" ${state.manualDilla?'checked':''}> Dilla Cheese</label>`;
+  for(const task of state.seasonal){html+=`<label class="special-check"><input type="checkbox" data-special="${task.id}" ${task.active?'checked':''}> ${esc(task.name)}</label>`}
+  html+='</section>';
+ }else if(view==='prep'){
+  let any=false;for(const station of stations){const standard=ordered(state.items.filter(i=>i.station===station&&((i.mode==='manual'&&state.manualDilla)||needs(i)||(i.daily&&!closedToday()&&['Roma Toms','Basil','House Mix','Romaine'].includes(i.name)))),station);const specials=state.seasonal.filter(i=>i.station===station&&i.active);if(!standard.length&&!specials.length)continue;any=true;html+=`<section class="group"><h2>${esc(station)}</h2>`;
+   let lastSub='';for(const i of standard){if(station==='Chopping & Mincing'){const sub=['Mushrooms','Red Onions','Roma Toms','Jalapeños','Parsley','Basil','Waffles','Kielbasa'].includes(i.name)?'Chopped':'Minced / Otherwise Prepared';if(sub!==lastSub){html+=`<h3 style="margin:15px 2px 5px;font-size:15px;color:#536c73">${esc(sub)}</h3>`;lastSub=sub}}html+=`<div class="item"><label class="task ${i.done?'done':''}"><input type="checkbox" data-id="${i.id}" data-field="done" ${i.done?'checked':''}><div class="details"><div class="name">${esc(i.name)}</div><div class="meta"><strong class="prep-amount">${esc(prepSuggestion(i))}</strong><br>${esc(prepHint(i))}</div></div></label></div>`}
+   for(const i of specials){html+=`<div class="item seasonal"><label class="task ${i.done?'done':''}"><input type="checkbox" data-season="${i.id}" ${i.done?'checked':''}><div class="details"><div class="name">${esc(i.name)}</div><div class="meta"><strong class="prep-amount">Prep as needed · quantity not counted</strong><br>${esc(seasonalSpecs[i.name]||'Details TBD')}</div></div></label></div>`}
+   html+='</section>'}
+  if(!any)html+='<p class="hint">No tasks flagged yet. Enter counts or check individual special prep items on the Count screen.</p>';
+ }else if(view==='menu'){
+  html+='<div class="item"><strong>Weekly pizza menu</strong><p class="hint">Two pizza selections per service day, Wednesday through Monday. Tuesday is closed. All eligible regular and seasonal pizzas are included; Pepperoni, Margherita, Cheese and Sausage are excluded.</p></div>';
+  for(const day of menuDays){html+=`<section class="item menu-day"><h3>${day}</h3><div class="menu-grid">`;for(let slot=0;slot<2;slot++){const value=(state.weeklyMenu[day]||[])[slot]||'';html+=`<div><label>Option ${slot+1}</label><select class="menu-pick" data-menu-day="${day}" data-menu-slot="${slot}"><option value="">Select pizza…</option>${state.pizzaNames.map(name=>`<option value="${esc(name)}" ${value===name?'selected':''}>${esc(name)}</option>`).join('')}</select></div>`}html+='</div></section>'}
+  html+='<section class="item"><h3>Pizza dropdown choices</h3><p class="hint">Add names missing from our current list. They will appear in every daily dropdown.</p><div class="bar"><input id="newPizza" placeholder="Pizza name" style="flex:1;min-width:130px;padding:10px"><button id="addPizza">Add pizza</button></div><div class="muted" style="margin-top:10px">'+state.pizzaNames.map(esc).join(' · ')+'</div></section>';
+ }else{
+  html+='<div class="item"><strong>Ingredient settings</strong><p class="hint">The prep unit/instruction can differ from the count unit. No automatic unit conversion is assumed.</p></div>';
+  for(const loc of locations){html+=`<details class="group" open><summary>${esc(loc)}</summary>`;for(const i of state.items.filter(x=>x.location===loc)){html+=`<div class="item"><div class="name">${esc(i.name)}</div><div class="edit"><label>Name<input data-id="${i.id}" data-field="name" value="${esc(i.name)}"></label><label>Count unit<input data-id="${i.id}" data-field="unit" value="${esc(i.unit)}"></label><label>Count location<select data-id="${i.id}" data-field="location">${locations.map(x=>`<option ${i.location===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label><label>Prep station<select data-id="${i.id}" data-field="station">${stations.map(x=>`<option ${i.station===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label><label>Trigger type<select data-id="${i.id}" data-field="mode"><option value="par" ${i.mode==='par'?'selected':''}>Below par</option><option value="threshold" ${i.mode==='threshold'?'selected':''}>At or below threshold</option>
+<option value="manual" ${i.mode==='manual'?'selected':''}>Manual / opportunity-based</option></select></label><label>Daily fresh prep<input type="checkbox" data-id="${i.id}" data-field="daily" ${i.daily?'checked':''}></label>
+<label>Prep instruction<input data-id="${i.id}" data-field="instruction" value="${esc(i.instruction)}"></label><label>Storage note<input data-id="${i.id}" data-field="note" value="${esc(i.note||'')}"></label></div></div>`}html+='</details>'}
+  html+='<section class="group"><h2>Seasonal prep tasks</h2><p class="hint">These appear only when their individual checkbox is selected on the Count screen.</p>';
+  for(const i of state.seasonal){html+=`<div class="item"><div class="name">${esc(i.pizza)} — ${esc(i.name)}</div><div class="edit"><label>Pizza<input data-season-edit="${i.id}" data-field="pizza" value="${esc(i.pizza)}"></label><label>Task<input data-season-edit="${i.id}" data-field="name" value="${esc(i.name)}"></label><label>Station<select data-season-edit="${i.id}" data-field="station">${stations.map(x=>`<option ${i.station===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label></div></div>`}
+  html+='</section>';
+ }
+ document.getElementById('content').innerHTML=html;
+}
+const content=document.getElementById('content');
+content.addEventListener('click',e=>{if(e.target.id!=='addPizza')return;const field=document.getElementById('newPizza');const name=field.value.trim();if(!name)return;if(excluded.has(name.toLowerCase())){alert('This pizza is excluded from the weekly menu.');return;}if(!state.pizzaNames.some(p=>p.toLowerCase()===name.toLowerCase())){state.pizzaNames.push(name);state.pizzaNames.sort((a,b)=>a.localeCompare(b));save();draw();}else alert('That pizza is already listed.');});
+content.addEventListener('change',e=>{const t=e.target;if(t.dataset.menuDay){const day=t.dataset.menuDay,slot=Number(t.dataset.menuSlot);if(!state.weeklyMenu[day])state.weeklyMenu[day]=['',''];state.weeklyMenu[day][slot]=t.value;save();return}if(t.id==='manualDilla'){state.manualDilla=t.checked;save();draw();return}if(t.dataset.special){const i=state.seasonal.find(x=>x.id===t.dataset.special);if(i){i.active=t.checked;i.done=false;}save();draw();return}if(t.dataset.season){const i=state.seasonal.find(x=>x.id===t.dataset.season);if(i)i.done=t.checked;save();draw();return}if(t.dataset.seasonEdit){const i=state.seasonal.find(x=>x.id===t.dataset.seasonEdit);if(i)i[t.dataset.field]=t.value;save();draw();return}const i=state.items.find(x=>x.id===t.dataset.id);if(!i)return;const f=t.dataset.field;if(!['have','par','threshold','done','name','unit','location','station','mode','instruction','note','daily'].includes(f))return;let val=t.type==='checkbox'?t.checked:t.value;if(['par','threshold'].includes(f))val=Math.max(0,Number(val)||0);if(f==='have'&&val!=='')val=String(Math.max(0,Number(val)||0));i[f]=val;if(['have','par','threshold'].includes(f))i.done=false;save();draw()});
+for(const v of ['count','prep','menu','settings'])document.getElementById(v+'Tab').onclick=()=>{view=v;draw()};
+document.getElementById('reset').onclick=()=>{if(confirm('Start a new prep day? Clears counts and completion checks. Keeps ingredient settings and featured-pizza selections.')){state.date=today();state.items.forEach(i=>{i.have='0';i.done=false});state.seasonal.forEach(i=>{i.done=false;i.active=false});state.manualDilla=false;save();draw()}};
+document.getElementById('exportBtn').onclick=()=>{const data={format:'prep-quests-backup',version:11,exportedAt:new Date().toISOString(),...state};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Prep_Quests_Backup_'+state.date+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const d=JSON.parse(await f.text());if(d.format!=='prep-quests-backup'||!Array.isArray(d.items)||d.items.length>500||!Array.isArray(d.seasonal)||d.seasonal.length>200)throw Error('Not a valid Prep Quests backup');if(!confirm('Replace current data with this backup?'))return;state={date:String(d.date||today()),items:d.items,seasonal:d.seasonal,manualDilla:!!d.manualDilla,weeklyMenu:d.weeklyMenu||emptyMenu(),pizzaNames:Array.isArray(d.pizzaNames)?d.pizzaNames:[...defaultPizzas]};state.pizzaNames=[...defaultPizzas,...state.pizzaNames.filter(n=>typeof n==='string'&&!excluded.has(n.trim().toLowerCase())&&!defaultPizzas.some(p=>p.toLowerCase()===n.trim().toLowerCase()))];save();draw();alert('Backup imported.')}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}};
+save();draw();
+</script></body></html>
